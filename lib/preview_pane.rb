@@ -5,10 +5,8 @@ class PreviewPane
   attr_reader :widget
 
   def initialize
-    # Create WebView for HTML content
     @webview = WebKit2Gtk::WebView.new
 
-    # Wrap in a scrolled window
     @scrolled_window = Gtk::ScrolledWindow.new
     @scrolled_window.set_policy(:automatic, :automatic)
     @scrolled_window.add(@webview)
