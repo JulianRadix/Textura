@@ -1,23 +1,33 @@
-require "gtk3"
+require 'gtk3'
+require_relative 'lib/editor_pane'
+require_relative 'lib/preview_pane'
 
-window = Gtk::Window.new("Textura")
-window.set_size_request(400, 400)
-window.set_border_width(10)
+window = Gtk::Window.new
+window.set_title("Textura")
+window.set_default_size(800, 600)
+window.signal_connect("destroy") { Gtk.main_quit }
 
-text_view = Gtk::TextView.new
-text_view.buffer.text = "Start typing here..."
-text_view.wrap_mode = :word
+paned = Gtk::Paned.new(:horizontal)
+window.add(paned)
 
-text_view.buffer.signal_connect("changed") do
-  puts text_view.buffer.text
+editor = EditorPane.new
+preview = PreviewPane.new
+
+# Ensure minimum sizes
+editor.widget.set_size_request(200, 100)
+preview.widget.set_size_request(200, 100)
+
+# Add to paned
+paned.add1(editor.widget)
+paned.add2(preview.widget)
+
+# Set initial divider position
+paned.position = 400
+
+# Live update
+editor.on_text_change do |text|
+  preview.update(text)
 end
 
-scrolled_window = Gtk::ScrolledWindow.new
-scrolled_window.set_policy(:automatic, :automatic)
-scrolled_window.add(text_view)
-
-window.add(scrolled_window)
-window.signal_connect("delete-event") { |_widget| Gtk.main_quit }
-window.show_all()
-
+window.show_all
 Gtk.main
