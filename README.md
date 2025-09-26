@@ -36,4 +36,4 @@ Contributors names and contact info
 
 ## License
 
-This project is licensed under the Student Project Use & Improvement License (SPUIL) 1.0 License - see the LICENSE file for details
+This project is licensed under the Student Project Use & Improvement License (SPUIL) 1.0 License - see the [LICENSE](/LICENSE) file for details
