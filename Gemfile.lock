@@ -52,6 +52,9 @@ GEM
     rouge (4.6.1)
     ttfunk (1.8.0)
       bigdecimal (~> 3.1)
+    webkit2-gtk (4.3.3)
+      gtk3 (= 4.3.3)
+      rake
 
 PLATFORMS
   ruby
@@ -62,6 +65,7 @@ DEPENDENCIES
   prawn
   redcarpet
   rouge
+  webkit2-gtk
 
 BUNDLED WITH
    2.7.2

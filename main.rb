@@ -26,7 +26,9 @@ paned.position = 400
 
 # Live update
 editor.on_text_change do |text|
-  preview.update(text)
+  # For now, just pass raw text as HTML
+  html = "<pre>#{text}</pre>"
+  preview.update(html)
 end
 
 window.show_all
