@@ -128,8 +128,8 @@ window.signal_connect("key-press-event") do |_, event|
 
   case event.keyval
   when Gdk::Keyval::KEY_o
-    open_file_dialog(window, file_manager, editor)
-    dirty = false
+    file_loaded = open_file_dialog(window, file_manager, editor)
+    dirty = false if file_loaded
     update_title(window, file_manager, dirty)
   when Gdk::Keyval::KEY_s
     save_file_dialog(window, file_manager, editor)
