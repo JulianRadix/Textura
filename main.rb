@@ -13,7 +13,7 @@ window.signal_connect("destroy") { Gtk.main_quit }
 
 # Split pane
 paned = Gtk::Paned.new(:horizontal)
-window.add(paned)
+# window.add(paned)
 
 # Editor and preview panes
 editor      = EditorPane.new
@@ -38,10 +38,20 @@ end
 # Rouge CSS
 ROUGE_CSS = Rouge::Themes::ThankfulEyes.new.render
 
+# Track Unsaved Changes
+dirty = false
+
+def update_title(window, file_manager, dirty)
+  name = file_manager.current_path ? File.basename(file_manager.current_path) : "Untitled"
+  window.set_title("Textura - #{'*' if dirty}#{name}")
+end
+
 # Live Markdown update
 editor.on_text_change do |text|
-  html_body = parser.to_html(text)
+  dirty = true
+  update_title(window, file_manager, dirty)
 
+  html_body = parser.to_html(text)
   full_html = <<~HTML
     <html>
       <head>
@@ -109,17 +119,103 @@ def save_file_dialog(window, file_manager, editor)
 end
 
 # Keyboard Shortcuts
-window.add_accel_group(accel = Gtk::AccelGroup.new)
+accel_group = Gtk::AccelGroup.new
+window.add_accel_group(accel_group)
 
 window.signal_connect("key-press-event") do |_, event|
   ctrl = (event.state & Gdk::ModifierType::CONTROL_MASK) != 0
+  next false unless ctrl  # Ignore if Ctrl not pressed
+
   case event.keyval
   when Gdk::Keyval::KEY_o
-    open_file_dialog(window, file_manager, editor) if ctrl
+    open_file_dialog(window, file_manager, editor)
+    dirty = false
+    update_title(window, file_manager, dirty)
   when Gdk::Keyval::KEY_s
-    save_file_dialog(window, file_manager, editor) if ctrl
+    save_file_dialog(window, file_manager, editor)
+    dirty = false
+    update_title(window, file_manager, dirty)
+  end
+
+  true  # Stop event propagation for Ctrl+O/Ctrl+S
+end
+
+# Menu Bar
+menu_bar = Gtk::MenuBar.new
+
+# File Menu
+file_menu = Gtk::Menu.new
+file_item = Gtk::MenuItem.new(label: "File")
+file_item.set_submenu(file_menu)
+
+# Open
+open_item = Gtk::MenuItem.new(label: "Open")
+open_item.signal_connect("activate") { open_file_dialog(window, file_manager, editor); dirty = false; update_title(window, file_manager, dirty) }
+open_item.add_accelerator("activate", accel_group, Gdk::Keyval::KEY_o, Gdk::ModifierType::CONTROL_MASK, Gtk::AccelFlags::VISIBLE)
+file_menu.append(open_item)
+
+# Save
+save_item = Gtk::MenuItem.new(label: "Save")
+save_item.signal_connect("activate") { save_file_dialog(window, file_manager, editor); dirty = false; update_title(window, file_manager, dirty) }
+save_item.add_accelerator("activate", accel_group, Gdk::Keyval::KEY_s, Gdk::ModifierType::CONTROL_MASK, Gtk::AccelFlags::VISIBLE)
+file_menu.append(save_item)
+
+# Save As
+save_as_item = Gtk::MenuItem.new(label: "Save As")
+save_as_item.signal_connect("activate") do
+  temp_path = file_manager.current_path
+  file_manager.instance_variable_set(:@current_path, nil)
+  save_file_dialog(window, file_manager, editor)
+  file_manager.instance_variable_set(:@current_path, temp_path)
+  dirty = false
+  update_title(window, file_manager, dirty)
+end
+file_menu.append(save_as_item)
+
+# Exit
+exit_item = Gtk::MenuItem.new(label: "Exit")
+exit_item.signal_connect("activate") { window.destroy }
+file_menu.append(exit_item)
+
+menu_bar.append(file_item)
+
+# Layout
+vbox = Gtk::Box.new(:vertical, 0)
+vbox.pack_start(menu_bar, expand: false, fill: false, padding: 0)
+vbox.pack_start(paned, expand: true, fill: true, padding: 0)
+window.add(vbox)
+
+# Confirm Unsaved Changed On Exit
+window.signal_connect("delete-event") do |_, _|
+  if dirty
+    dialog = Gtk::MessageDialog.new(
+      parent: window,
+      flags: :modal,
+      type: :warning,
+      buttons_type: :yes_no_cancel,
+      message: "You have unsaved chaanges. Save before exiting?"
+    )
+    dialog.secondary_text = "Choose Yes to save, No to discard or Cancel to stay."
+
+    response = dialog.run
+    dialog.destroy
+
+    case response
+    when Gtk::ResponseType::YES
+      save_file_dialog(window, file_manager, editor)
+      Gtk.main_quit
+    when Gtk::ResponseType::NO
+      Gtk.main_quit
+    else
+      # Cancel: Do nothing
+    end
+
+    true # Stop default destroy signal until handled
+  else
+    false # allow window to close normally
   end
 end
 
+update_title(window, file_manager, dirty)
 window.show_all
 Gtk.main
