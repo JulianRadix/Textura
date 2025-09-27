@@ -1,7 +1,7 @@
 class FileManager
   attr_reader :current_path
 
-  def intialize
+  def initialize
     @current_path = nil
   end
 
