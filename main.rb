@@ -193,7 +193,7 @@ window.signal_connect("delete-event") do |_, _|
       flags: :modal,
       type: :warning,
       buttons_type: :yes_no_cancel,
-      message: "You have unsaved chaanges. Save before exiting?"
+      message: "You have unsaved changes. Save before exiting?"
     )
     dialog.secondary_text = "Choose Yes to save, No to discard or Cancel to stay."
 
